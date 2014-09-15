@@ -32,8 +32,8 @@
 
 #include "config.h"
 
-#include "lock.bitmap"
-#include "mask.bitmap"
+#include "lock.xbm"
+#include "mask.xbm"
 
 #define TIMEOUTPERATTEMPT 30000
 #define MAXGOODWILL  (TIMEOUTPERATTEMPT*5)
