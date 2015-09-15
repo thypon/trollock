@@ -2,9 +2,9 @@
 
 TOPDIR := ..
 
-xtrlock_pam_src = xtrlock.c auth_pam.c
-xtrlock_pam_cflags += $(X11_CFLAGS)
-xtrlock_pam_libs += $(X11_LIBS) -lpam
-xtrlock_pam_type = bin
+trollock_src = trollock.c auth_pam.c
+trollock_cflags += $(X11_CFLAGS)
+trollock_libs += $(X11_LIBS) -lpam
+trollock_type = bin
 
 include $(TOPDIR)/.config/rules.mk

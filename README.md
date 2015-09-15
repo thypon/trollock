@@ -1,35 +1,35 @@
-# xtrlock-pam
+# trollock
 
-**xtrlock** is PAM based X11 screen locker that hides all windows
+**trollock** is PAM based X11 screen locker that hides all windows
 
-## Features 
+## Features
 
  - PAM based
    - use any PAM module you like
    - run by regular user, no root setuid is ever required
  - Background actions
    - **blank** blank the screen, hide desktop content
-   - **none** do not hide anything, as former xtrlock did
+   - **none** do not hide anything, as former trollock did
    - **bg** hide windows, show just root window background. This work if root
      window has one.
-     
+
 ## Usage
-Run **xtrlock** to lock, and type your password to unlock.
+Run **trollock** to lock, and type your password to unlock.
 
 Default behaviour
 ```bash
-xtrlock_pam
-xtrlock_pam -p system-local-login -b blank
+trollock
+trollock -p system-local-login -b blank
 ```
 
 Another run
 ```bash
-xtrlock_pam -p login -b none
+trollock -p login -b none
 ```
 
 Try this!
 ```bash
-xtrlock_pam -b bg
+trollock -b bg
 ```
 
 ### More

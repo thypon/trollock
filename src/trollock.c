@@ -1,5 +1,5 @@
 /*
- * xtrlock.c
+ * trollock.c
  *
  * X Transparent Lock
  *
@@ -120,7 +120,7 @@ create_cursors(void)
     Pixmap csr_source,csr_mask;
     XColor dummy, def_bg, def_fg, bg, fg;
     int i;
-    
+
     csr_source = XCreateBitmapFromData(display, root, lock_bits,
         lock_width, lock_height);
     csr_mask = XCreateBitmapFromData(display, root, mask_bits, mask_width,
@@ -131,7 +131,7 @@ create_cursors(void)
         err("Can't allocate basic colors: black, white\n");
         exit(1);
     }
-     
+
     for (i = 0; i < AUTH_MAX; i++) {
         if (!XAllocNamedColor(display, cmap, cursors[i].fg, &dummy, &fg))
             fg = def_fg;
@@ -172,7 +172,7 @@ lock(int mode)
         err("can't grab keyboard\n");
         exit(1);
     }
-  
+
     for (;;) {
         if (rlen)
             state = AUTH_NOW;
@@ -243,7 +243,7 @@ help()
 {
     printf("%s %s - PAM based X11 screen locker\n",
         PROJECT_NAME, PROJECT_VERSION);
-    printf("Usage: xtrlock [options...]\n");
+    printf("Usage: trollock [options...]\n");
     printf("Options:\n");
     printf(" -h      This help message\n");
     printf(" -p MOD  PAM module, default is system-local-login\n");
