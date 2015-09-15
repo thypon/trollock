@@ -57,7 +57,7 @@ Window root;
 int screen;
 Colormap cmap;
 
-int bg_action = MBLANK;
+int bg_action = MNONE;
 char *pam_module = "system-local-login";
 
 int auth_pam(char *user, char *password, char *module);

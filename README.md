@@ -8,8 +8,8 @@
    - use any PAM module you like
    - run by regular user, no root setuid is ever required
  - Background actions
+   - **none** do not hide anything
    - **blank** blank the screen, hide desktop content
-   - **none** do not hide anything, as former trollock did
    - **bg** hide windows, show just root window background. This work if root
      window has one.
 
