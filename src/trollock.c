@@ -44,12 +44,12 @@ enum { MNONE, MBG, MBLANK };
 enum { AUTH_NONE, AUTH_NOW, AUTH_FAILED, AUTH_MAX };
 
 static struct {
-    char *fg, *bg;
-    Cursor c;
+	char *fg, *bg;
+	Cursor c;
 } cursors[AUTH_MAX] = {
-    [ AUTH_NONE ] = { .bg = "steelblue3", .fg = "grey25" },
-    [ AUTH_NOW ] = { .bg = "cadetblue3", .fg = "grey25" },
-    [ AUTH_FAILED ] = { .bg = "red", .fg = "grey25" },
+	[ AUTH_NONE ] = { .bg = "steelblue3", .fg = "grey25" },
+	[ AUTH_NOW ] = { .bg = "cadetblue3", .fg = "grey25" },
+	[ AUTH_FAILED ] = { .bg = "red", .fg = "grey25" },
 };
 
 Display *display;
@@ -64,223 +64,244 @@ int auth_pam(char *user, char *password, char *module);
 
 int passwordok(char *password)
 {
-    return auth_pam(getenv("USER"), password, pam_module);
+	return auth_pam(getenv("USER"), password, pam_module);
 }
 
 #define err(fmt, args...)                       \
-    do { fprintf(stderr, fmt, ## args); } while(0)
+	do { fprintf(stderr, fmt, ## args); } while(0)
 
 
-Window
+	Window
 create_window(unsigned long values, XSetWindowAttributes *attrib)
 {
-    return XCreateWindow(display, root,
-        0, 0,
-        DisplayWidth(display, screen),
-        DisplayHeight(display, screen),
-        0, CopyFromParent, CopyFromParent, CopyFromParent,
-        values, attrib);
+	return XCreateWindow(display, root,
+			0, 0,
+			DisplayWidth(display, screen),
+			DisplayHeight(display, screen),
+			0, CopyFromParent, CopyFromParent, CopyFromParent,
+			values, attrib);
 }
 
 /* If window creation fails, Xlib will exit an application */
-Window
+	Window
 create_window_full(int mode)
 {
-    XSetWindowAttributes attrib;
-    unsigned long values = 0;
-    Window window;
+	XSetWindowAttributes attrib;
+	unsigned long values = 0;
+	Window window;
 
-    values = CWOverrideRedirect;
-    attrib.override_redirect = True;
+	values = CWOverrideRedirect;
+	attrib.override_redirect = True;
 
-    if (mode == MNONE) {
-        window = XCreateWindow(display, root, 0, 0, 1, 1, 0,
-            CopyFromParent, InputOnly, CopyFromParent, values, &attrib);
-        XSync(display, False);
-        return window;
-    }
-    if (mode == MBG) {
-        values |= CWBackPixmap;
-        attrib.background_pixmap = ParentRelative;
-        window = create_window(values, &attrib);
-    } else if (mode == MBLANK) {
-        values |= CWBackPixel;
-        attrib.background_pixel = BlackPixel(display, screen);
-        window = create_window(values, &attrib);
-    } else
-        exit(1);
-    XClearWindow(display, window);
-    XSync(display, False);
-    return window;
+	if (mode == MNONE) {
+		window = XCreateWindow(display, root, 0, 0, 1, 1, 0,
+				CopyFromParent, InputOnly, CopyFromParent, values, &attrib);
+		XSync(display, False);
+		return window;
+	}
+	if (mode == MBG) {
+		values |= CWBackPixmap;
+		attrib.background_pixmap = ParentRelative;
+		window = create_window(values, &attrib);
+	} else if (mode == MBLANK) {
+		values |= CWBackPixel;
+		attrib.background_pixel = BlackPixel(display, screen);
+		window = create_window(values, &attrib);
+	} else
+		exit(1);
+	XClearWindow(display, window);
+	XSync(display, False);
+	return window;
 }
 
-static void
+	static void
 create_cursors(void)
 {
-    Pixmap csr_source,csr_mask;
-    XColor dummy, def_bg, def_fg, bg, fg;
-    int i;
+	Pixmap csr_source,csr_mask;
+	XColor dummy, def_bg, def_fg, bg, fg;
+	int i;
 
-    csr_source = XCreateBitmapFromData(display, root, lock_bits,
-        lock_width, lock_height);
-    csr_mask = XCreateBitmapFromData(display, root, mask_bits, mask_width,
-        mask_height);
+	csr_source = XCreateBitmapFromData(display, root, lock_bits,
+			lock_width, lock_height);
+	csr_mask = XCreateBitmapFromData(display, root, mask_bits, mask_width,
+			mask_height);
 
-    if (!XAllocNamedColor(display, cmap, "white", &dummy, &def_fg)
-        || !XAllocNamedColor(display, cmap, "black", &dummy, &def_bg)) {
-        err("Can't allocate basic colors: black, white\n");
-        exit(1);
-    }
+	if (!XAllocNamedColor(display, cmap, "white", &dummy, &def_fg)
+			|| !XAllocNamedColor(display, cmap, "black", &dummy, &def_bg)) {
+		err("Can't allocate basic colors: black, white\n");
+		exit(1);
+	}
 
-    for (i = 0; i < AUTH_MAX; i++) {
-        if (!XAllocNamedColor(display, cmap, cursors[i].fg, &dummy, &fg))
-            fg = def_fg;
-        if (!XAllocNamedColor(display, cmap, cursors[i].bg, &dummy, &bg))
-            bg = def_bg;
-        cursors[i].c = XCreatePixmapCursor(display, csr_source, csr_mask,
-            &fg, &bg, lock_x_hot, lock_y_hot);
-    }
+	for (i = 0; i < AUTH_MAX; i++) {
+		if (!XAllocNamedColor(display, cmap, cursors[i].fg, &dummy, &fg))
+			fg = def_fg;
+		if (!XAllocNamedColor(display, cmap, cursors[i].bg, &dummy, &bg))
+			bg = def_bg;
+		cursors[i].c = XCreatePixmapCursor(display, csr_source, csr_mask,
+				&fg, &bg, lock_x_hot, lock_y_hot);
+	}
 }
 
-void
+	void
 lock(int mode)
 {
-    XEvent ev;
-    KeySym ks;
-    char cbuf[10], rbuf[128];
-    int clen, rlen=0, state = AUTH_NONE, old_state = -1;
-    long goodwill= INITIALGOODWILL, timeout= 0;
-    Window window;
+	XEvent ev;
+	KeySym ks;
+	char cbuf[10], rbuf[128];
+	int clen, rlen=0, state = AUTH_NONE, old_state = -1;
+	long goodwill= INITIALGOODWILL, timeout= 0;
+	Window window;
+	int gs=0,tvt, ret; /*gs==grab successful*/
+	struct timeval tv;
 
-    display = XOpenDisplay(0);
-    if (display == NULL) {
-        err("cannot open display\n");
-        exit(1);
-    }
-    screen = DefaultScreen(display);
-    root = DefaultRootWindow(display);
-    cmap = DefaultColormap(display, screen);
-    window = create_window_full(mode);
+	display = XOpenDisplay(0);
+	if (display == NULL) {
+		err("cannot open display\n");
+		exit(1);
+	}
+	screen = DefaultScreen(display);
+	root = DefaultRootWindow(display);
+	cmap = DefaultColormap(display, screen);
+	window = create_window_full(mode);
 
-    XSelectInput(display,window,KeyPressMask|KeyReleaseMask);
-    create_cursors();
-    XMapWindow(display,window);
-    XRaiseWindow(display,window);
-    XSync(display, False);
-    if (XGrabKeyboard(display, window, False, GrabModeAsync, GrabModeAsync,
-            CurrentTime) != GrabSuccess) {
-        err("can't grab keyboard\n");
-        exit(1);
-    }
+	XSelectInput(display,window,KeyPressMask|KeyReleaseMask);
+	create_cursors();
+	XMapWindow(display,window);
+	XRaiseWindow(display,window);
+	XSync(display, False);
 
-    for (;;) {
-        if (rlen)
-            state = AUTH_NOW;
-        else
-            state = AUTH_NONE;
-        if (old_state != state) {
-            old_state = state;
-            if (XGrabPointer(display, window, False,
-                    0, GrabModeAsync, GrabModeAsync, None,
-                    cursors[state].c, CurrentTime) != GrabSuccess)
-                err("can't grab pointer\n");
-        }
+	/*Sometimes the WM doesn't ungrab the keyboard quickly enough if
+	 *launching xtrlock from a keystroke shortcut, meaning xtrlock fails
+	 *to start We deal with this by waiting (up to 100 times) for 10,000
+	 *microsecs and trying to grab each time. If we still fail
+	 *(i.e. after 1s in total), then give up, and emit an error
+	 */
 
-        XNextEvent(display,&ev);
-        switch (ev.type) {
-        case KeyPress:
-            if (ev.xkey.time < timeout) {
-                XBell(display,0);
-                break;
-            }
-            clen= XLookupString(&ev.xkey,cbuf,9,&ks,0);
-            switch (ks) {
-            case XK_Escape: case XK_Clear:
-                rlen=0; break;
-            case XK_Delete: case XK_BackSpace:
-                if (rlen>0)
-                    rlen--;
-                break;
-            case XK_Linefeed: case XK_Return:
-                if (rlen==0)
-                    break;
-                rbuf[rlen]=0;
-                XGrabPointer(display, window, False,
-                    0, GrabModeAsync, GrabModeAsync, None,
-                    cursors[AUTH_FAILED].c, CurrentTime);
-                if (passwordok(rbuf))
-                    exit(0);
-                XBell(display,0);
-                rlen= 0;
-                if (timeout) {
-                    goodwill+= ev.xkey.time - timeout;
-                    if (goodwill > MAXGOODWILL)
-                        goodwill= MAXGOODWILL;
-                }
-                timeout = -goodwill*GOODWILLPORTION;
-                goodwill += timeout;
-                timeout += ev.xkey.time + TIMEOUTPERATTEMPT;
-                break;
-            default:
-                if (clen != 1)
-                    break;
-                /* allow space for the trailing \0 */
-                if (rlen < (sizeof(rbuf) - 1)) {
-                    rbuf[rlen]=cbuf[0];
-                    rlen++;
-                }
-                break;
-            }
-            break;
-        default:
-            break;
-        }
-    }
+	for (tvt=0 ; tvt<100; tvt++) {
+		ret = XGrabKeyboard(display,window,False,GrabModeAsync,GrabModeAsync,
+				CurrentTime);
+		if (ret == GrabSuccess) {
+			gs=1;
+			break;
+		}
+		/*grab failed; wait .01s*/
+		tv.tv_sec=0;
+		tv.tv_usec=10000;
+		select(1,NULL,NULL,NULL,&tv);
+	}
+	if (gs==0){
+		err("can't grab keyboard\n");
+		exit(1);
+	}
+
+	for (;;) {
+		if (rlen)
+			state = AUTH_NOW;
+		else
+			state = AUTH_NONE;
+		if (old_state != state) {
+			old_state = state;
+			if (XGrabPointer(display, window, False,
+						0, GrabModeAsync, GrabModeAsync, None,
+						cursors[state].c, CurrentTime) != GrabSuccess)
+				err("can't grab pointer\n");
+		}
+
+		XNextEvent(display,&ev);
+		switch (ev.type) {
+			case KeyPress:
+				if (ev.xkey.time < timeout) {
+					XBell(display,0);
+					break;
+				}
+				clen= XLookupString(&ev.xkey,cbuf,9,&ks,0);
+				switch (ks) {
+					case XK_Escape: case XK_Clear:
+						rlen=0; break;
+					case XK_Delete: case XK_BackSpace:
+						if (rlen>0)
+							rlen--;
+						break;
+					case XK_Linefeed: case XK_Return:
+						if (rlen==0)
+							break;
+						rbuf[rlen]=0;
+						XGrabPointer(display, window, False,
+								0, GrabModeAsync, GrabModeAsync, None,
+								cursors[AUTH_FAILED].c, CurrentTime);
+						if (passwordok(rbuf))
+							exit(0);
+						XBell(display,0);
+						rlen= 0;
+						if (timeout) {
+							goodwill+= ev.xkey.time - timeout;
+							if (goodwill > MAXGOODWILL)
+								goodwill= MAXGOODWILL;
+						}
+						timeout = -goodwill*GOODWILLPORTION;
+						goodwill += timeout;
+						timeout += ev.xkey.time + TIMEOUTPERATTEMPT;
+						break;
+					default:
+						if (clen != 1)
+							break;
+						/* allow space for the trailing \0 */
+						if (rlen < (sizeof(rbuf) - 1)) {
+							rbuf[rlen]=cbuf[0];
+							rlen++;
+						}
+						break;
+				}
+				break;
+			default:
+				break;
+		}
+	}
 }
 
-void
+	void
 help()
 {
-    printf("%s %s - PAM based X11 screen locker\n",
-        PROJECT_NAME, PROJECT_VERSION);
-    printf("Usage: trollock [options...]\n");
-    printf("Options:\n");
-    printf(" -h      This help message\n");
-    printf(" -p MOD  PAM module, default is system-local-login\n");
-    printf(" -b BG   background action, none, blank or bg, default is blank\n");
+	printf("%s %s - PAM based X11 screen locker\n",
+			PROJECT_NAME, PROJECT_VERSION);
+	printf("Usage: trollock [options...]\n");
+	printf("Options:\n");
+	printf(" -h      This help message\n");
+	printf(" -p MOD  PAM module, default is system-local-login\n");
+	printf(" -b BG   background action, none, blank or bg, default is blank\n");
 }
 
 int main(int argc, char *argv[])
 {
-    int opt;
+	int opt;
 
-    while ((opt = getopt(argc, argv, "b:p:h")) != -1) {
-        switch (opt) {
-        case 'h':
-            help();
-            exit(0);
+	while ((opt = getopt(argc, argv, "b:p:h")) != -1) {
+		switch (opt) {
+			case 'h':
+				help();
+				exit(0);
 
-        case 'p':
-            pam_module = optarg;
-            break;
+			case 'p':
+				pam_module = optarg;
+				break;
 
-        case 'b':
-            if (!strcmp(optarg, "none"))
-                bg_action = MNONE;
-            else if (!strcmp(optarg, "blank"))
-                bg_action = MBLANK;
-             else if (!strcmp(optarg, "bg"))
-                bg_action = MBG;
-            else {
-                err("unknown bg action '%s'\n", optarg);
-                exit(1);
-            }
-            break;
+			case 'b':
+				if (!strcmp(optarg, "none"))
+					bg_action = MNONE;
+				else if (!strcmp(optarg, "blank"))
+					bg_action = MBLANK;
+				else if (!strcmp(optarg, "bg"))
+					bg_action = MBG;
+				else {
+					err("unknown bg action '%s'\n", optarg);
+					exit(1);
+				}
+				break;
 
-        default:
-            exit(1);
-        }
-    }
-    lock(bg_action);
-    return 0;
+			default:
+				exit(1);
+		}
+	}
+	lock(bg_action);
+	return 0;
 }
